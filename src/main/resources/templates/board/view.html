@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" xmlns:sec="http://www.w3.org/1999/xhtml"
+      layout:decorator="layout/default">
+
+<head>
+    <title>view</title>
+</head>
+
+<!-- board.html 고유 CSS 추가 -->
+<th:block layout:fragment="css">
+</th:block>
+
+<!-- board.html 고유 script 추가 -->
+<th:block layout:fragment="script">
+</th:block>
+
+<div layout:fragment="content">
+    <div class="container-fluid">
+        <!-- Page Heading -->
+        <h1 class="h3 mt-2 mb-2 text-gray-800">게시판</h1>
+        <p class="mb-4">상세보기</p>
+
+        <div class="row">
+            <div class="col-6">
+                <form name="boardForm" id="boardForm">
+                    <input type="hidden" name="boardSeq" id="boardSeq" th:value="${board.boardSeq}"/>
+                    <div class="form-group">
+                        <label for="boardTitle">제목</label>
+                        <input type="text" class="form-control" id="boardTitle" name="boardTitle" placeholder="제목"
+                               th:value="${board.boardTitle}" readonly>
+                        <!--<small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone
+                            else.
+                        </small>-->
+                    </div>
+                    <div class="form-group">
+                        <label for="boardContents">내용</label>
+                        <textarea class="form-control" id="boardContents" name="boardContents" rows="5"
+                                  th:text="${board.boardContents}" readonly></textarea>
+                    </div>
+                    <!--<div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="exampleCheck1">
+                        <label class="form-check-label" for="exampleCheck1">Check me out</label>
+                    </div>-->
+                    <a type="button" class="btn btn-secondary" th:href="@{/boards}">목록</a>
+                    <a type="submit" th:if="${owener}" class="btn btn-primary" th:href="@{/boards/form/{boardSeq}(boardSeq=${board.boardSeq})}">수정</a>
+                    <a type="button" th:if="${owener}" class="btn btn-danger" onclick="deleteBoard()">삭제</a>
+                </form>
+            </div>
+        </div>
+
+        <!-- 댓글 -->
+        <hr/>
+
+        <div class="col-6">
+            <!-- 댓글 작성 -->
+            <div class="row">
+                <div class="col-10">
+                    <textarea name="commentContents" id="commentContents" class="form-control"></textarea>
+                </div>
+                <div class="col-2">
+                    <a role="button" class="btn btn-primary" href="javascript:" onclick="insertComment()">등록</a>
+                </div>
+            </div>
+
+            <hr/>
+
+            <!-- 댓글 리스트 -->
+            <th:block th:each="comment : ${boardComments}">
+                <div class="row mb-2">
+                    <div class="col-10">
+                        <textarea name="commentContents" class="form-control" th:text="${comment.commentContents}" readonly th:commentSeq="${comment.commentSeq}"></textarea>
+                        <small class="form-text text-muted" th:text="|작성자 : ${comment.member.getMemberId()}, 작성일 : ${comment.getCreatedAt()}|"></small>
+                    </div>
+                    <div class="col-2" th:if="${memberSeq == comment.member.memberSeq}">
+                        <a role="button" class="btn btn-sm btn-danger" href="javascript:" th:name="|deleteComment_${comment.commentSeq}|" th:onclick="|deleteComment('${comment.commentSeq}')|">삭제</a>
+                        <a role="button" class="btn btn-sm btn-light" href="javascript:" th:name="|updateCommentForm_${comment.commentSeq}|" th:onclick="|updateCommentForm('${comment.commentSeq}')|">수정</a>
+                        <a role="button" class="btn btn-sm btn-light" href="javascript:" th:name="|updateComment_${comment.commentSeq}|" th:onclick="|updateComment('${comment.commentSeq}')|">수정</a>
+                        <a role="button" class="btn btn-sm btn-light" href="javascript:" th:name="|cancelUpdateCommentForm_${comment.commentSeq}|" th:onclick="|cancelUpdateCommentForm('${comment.commentSeq}')|">취소</a>
+                    </div>
+                </div>
+            </th:block>
+
+            <ul class="pagination" th:with="start=${T(Math).floor(boardComments.number/10)*10 + 1}, last=(${start + 9 < boardComments.totalPages ? start + 9 : boardComments.totalPages})">
+                <li class="page-item">
+                    <a th:href="@{/boards/{boardSeq}(boardSeq=${boardSeq},page=1)}" aria-label="First" class="page-link">
+                        <span aria-hidden="true">First</span>
+                    </a>
+                </li>
+                <li th:class="${boardComments.first} ? 'disabled page-item' : 'page-item'">
+                    <a th:href="${boardComments.first} ? '#' :@{/boards/{boardSeq}(boardSeq=${boardSeq},page=${boardComments.number})}" aria-label="Previous" class="page-link">
+                        <span aria-hidden="true">&lt;</span>
+                    </a>
+                </li>
+                <li th:each="page: ${#numbers.sequence(start, last)}" th:class="${page == boardComments.number + 1} ? 'active page-item' : 'page-item'">
+                    <a th:text="${page}" th:href="@{/boards/{boardSeq}(boardSeq=${boardSeq},page=${page})}" class="page-link"></a>
+                </li>
+                <li class="page-item">
+                    <a th:href="${boardComments.last} ? '#' : @{/boards/{boardSeq}(boardSeq=${boardSeq},page=${boardComments.number + 2})}" aria-label="Next" class="page-link">
+                        <span aria-hidden="true">&gt;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a th:href="@{/boards/{boardSeq}(boardSeq=${boardSeq},page=${boardComments.totalPages})}" aria-label="Last" class="page-link">
+                        <span aria-hidden="true">Last</span>
+                    </a>
+                </li>
+            </ul>
+
+        </div>
+
+    </div>
+</div>
+
+<script layout:fragment="pageScript">
+
+    $(document).ready(function(){
+        $("a[name*=cancelUpdateCommentForm_]").hide();
+        $("a[name*=updateComment_]").hide();
+    });
+
+    // 게시글 삭제
+    function deleteBoard() {
+        $.ajax({
+            type: "DELETE",
+            contentType: "application/json",
+            url: "/boards/" + $("#boardSeq").val(),
+            dataType: "json",
+            success: function (data) {
+                alert(data.message);
+                if (data.result) history.back();
+            },
+            error: function (data) {
+                alert('삭제 중 오류가 발생하였습니다');
+            }
+        });
+    }
+
+    // 댓글 입력
+    function insertComment() {
+
+        $.ajax({
+            type: "POST",
+            contentType: "application/json",
+            url: "/boards/" + $("#boardSeq").val() + "/comments",
+            dataType: "json",
+            data: JSON.stringify({
+                "commentContents": $("#commentContents").val()
+            }),
+            success: function (data) {
+                alert(data.message);
+                if (data.result) location.reload();
+            },
+            error: function (data) {
+                alert('삭제 중 오류가 발생하였습니다');
+            }
+        });
+    }
+
+    // 댓글 삭제
+    function deleteComment(commentSeq) {
+
+        $.ajax({
+            type: "DELETE",
+            contentType: "application/json",
+            url: "/boards/" + $("#boardSeq").val() + "/comments/" + commentSeq,
+            dataType: "json",
+            success: function (data) {
+                alert(data.message);
+                if (data.result) location.reload();
+            },
+            error: function (data) {
+                alert('삭제 중 오류가 발생하였습니다');
+            }
+        });
+    }
+
+    // 댓글 수정폼
+    function updateCommentForm(commentSeq) {
+        $("a[name=deleteComment_" + commentSeq + "]").hide();
+        $("a[name=updateCommentForm_" + commentSeq + "]").hide();
+        $("a[name=cancelUpdateCommentForm_" + commentSeq + "]").show();
+        $("a[name=updateComment_" + commentSeq + "]").show();
+
+        $("textarea[commentSeq="+ commentSeq+"]").attr("readonly", false);
+    }
+
+    // 댓글 수정폼 취소
+    function cancelUpdateCommentForm(commentSeq) {
+        $("a[name=deleteComment_" + commentSeq + "]").show();
+        $("a[name=updateCommentForm_" + commentSeq + "]").show();
+        $("a[name=cancelUpdateCommentForm_" + commentSeq + "]").hide();
+        $("a[name=updateComment_" + commentSeq + "]").hide();
+
+        $("textarea[commentSeq="+ commentSeq+"]").attr("readonly", true);
+    }
+
+    // 댓글 수정
+    function updateComment(commentSeq) {
+
+        $.ajax({
+            type: "PUT",
+            contentType: "application/json",
+            url: "/boards/" + $("#boardSeq").val() + "/comments/" + commentSeq,
+            dataType: "json",
+            data: JSON.stringify({
+                "commentContents": $("textarea[commentSeq=" + commentSeq + "]").val()
+            }),
+            success: function (data) {
+                alert(data.message);
+                if (data.result) location.reload();
+            },
+            error: function (data) {
+                alert('삭제 중 오류가 발생하였습니다');
+            }
+        });
+    }
+</script>
+
+</html>

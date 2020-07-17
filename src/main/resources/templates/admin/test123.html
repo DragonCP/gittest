@@ -1,0 +1,719 @@
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="layout/default">
+
+<head>
+  <title>wordcloud</title>
+</head>
+
+<!-- board.html 고유 CSS 추가 -->
+<th:block layout:fragment="css">
+</th:block>
+
+<!-- board.html 고유 script 추가 -->
+<th:block layout:fragment="script">
+</th:block>
+
+<div layout:fragment="content">
+  <html>
+  <head>
+    <meta charset="UTF-8">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker3.min.css">
+  </head>
+  <body>
+  <div>
+    <h2>UNESCO Meeting Word Cloud</h2>
+  </div>
+  <div>
+    <label>FROM</label> <input type="text" id="datePicker">
+    <label>TO</label> <input type="text" id="datePicker1">
+  </div>
+  <button type="button" id="click-btn">Search</button>
+  <script
+          src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+  <script
+          src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js">
+
+  </script>
+
+  <script type="text/javascript">
+    $('#datePicker').datepicker({
+      format : "yyyy-mm-dd", // 달력에서 클릭시 표시할 값 형식
+    });
+    $('#datePicker1').datepicker({
+      format : "yyyy-mm-dd", // 달력에서 클릭시 표시할 값 형식
+    });
+    $('#click-btn').on('click', function() {
+      var date = $('#datePicker').val();
+      var date1 = $('#datePicker1').val();
+      swal("searing", "Please wait", "info");
+
+
+      ;
+      var xmlhttp = new XMLHttpRequest();
+      var url = "http://127.0.0.1:9090/admin/test.json  ";
+
+      xmlhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+          var myArr = JSON.parse(this.responseText);
+          myFunction(myArr);
+        }
+      };
+      xmlhttp.open("GET", url, true);
+      xmlhttp.send();
+
+      function myFunction(arr) {
+        out = "";
+        out2 = "";
+        var i;
+        for(i = 0; i < arr.length; i++) {
+          if (arr[i].date >= date && arr[i].date <= date1) {
+            out += arr[i].text;
+            out2 += arr[i].title+", ";
+          }
+        }
+
+        };
+
+    });
+  </script>
+  </body>
+
+  <style>
+    #chartdiv {
+      width:100%;
+      height: 500px;
+    }
+    .box {
+      width: 40%;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.2);
+      padding: 35px;
+      border: 2px solid #fff;
+      border-radius: 20px/50px;
+      background-clip: padding-box;
+      text-align: center;
+    }
+
+    .button {
+      font-size: 1em;
+      padding: 10px;
+      color: #fff;
+      border: 2px solid #06D85F;
+      border-radius: 20px/50px;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.3s ease-out;
+    }
+    .button:hover {
+      background: #06D85F;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.7);
+      transition: opacity 500ms;
+      visibility: hidden;
+      opacity: 0;
+    }
+    .overlay:target {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .popup {
+      margin: 70px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 5px;
+      width: 30%;
+      position: relative;
+      transition: all 5s ease-in-out;
+    }
+
+    .popup h2 {
+      margin-top: 0;
+      color: #333;
+      font-family: Tahoma, Arial, sans-serif;
+    }
+    .popup .close {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      transition: all 200ms;
+      font-size: 30px;
+      font-weight: bold;
+      text-decoration: none;
+      color: #333;
+    }
+    .popup .close:hover {
+      color: #06D85F;
+    }
+    .popup .content {
+      max-height: 30%;
+      overflow: auto;
+    }
+
+    @media screen and (max-width: 700px){
+      .box{
+        width: 70%;
+      }
+      .popup{
+        width: 70%;
+      }
+    }
+  </style>
+
+  <!-- Resources -->
+  <script src="https://www.amcharts.com/lib/4/core.js"></script>
+  <script src="https://www.amcharts.com/lib/4/charts.js"></script>
+  <script src="https://www.amcharts.com/lib/4/plugins/wordCloud.js"></script>
+  <script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>
+  <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+
+  <!-- Chart code -->
+  <script>
+    am4core.ready(function() {
+
+// Themes begin
+      am4core.useTheme(am4themes_animated);
+// Themes end
+
+
+      var chart = am4core.create("chartdiv", am4plugins_wordCloud.WordCloud);
+      var series = chart.series.push(new am4plugins_wordCloud.WordCloudSeries());
+
+      series.accuracy = 4;
+      series.step = 15;
+      series.rotationThreshold = 0.7;
+      series.maxCount = 200;
+      series.minWordLength = 2;
+      series.labels.template.tooltipText = "{word}: {value}";
+      series.fontFamily = "Courier New";
+      series.maxFontSize = am4core.percent(30);
+      series.excludeWords = ["the", "a", "an", "of", "to", "with", "for","from", "and", "but","in","on","is","are","by","at"]
+
+      series.text = "2. Admission of observers\n" +
+              "Decision: 43 COM 2\n" +
+              "The World Heritage Committee,\n" +
+              "1. Taking into consideration Rule 8 (Observers) of the Rules of Procedure of the Committee,\n" +
+              "2. Authorizes the participation in the 43rd session, as observers, of the representatives of\n" +
+              "international governmental organizations (IGOs), international non-governmental\n" +
+              "organizations (INGOs), non- governmental organizations (NGOs), permanent observer\n" +
+              "missions to UNESCO and non profit-making institutions in the fields covered by the\n" +
+              "Convention, listed in Part I of the Document WHC/19/43.COM/2.\n" +
+              "3. Adoption of the Agenda and Timetable of the World Heritage Committee (Baku, 2019)\n" +
+              "3A. Adoption of the Agenda\n" +
+              "Decision: 43 COM 3A\n" +
+              "The World Heritage Committee,\n" +
+              "1. Having examined Document WHC/19/43.COM/3A,\n" +
+              "2. Adopts the Agenda contained in the above-mentioned document.\n" +
+              "3B. Provisional Timetable\n" +
+              "Decision: 43 COM 3B\n" +
+              "The World Heritage Committee,\n" +
+              "1. Having examined Document WHC/19/43.COM/3B,\n" +
+              "2. Adopts the Timetable contained in the above-mentioned document.\n" +
+              "Decisions adopted during the 43rd session WHC/19/43.COM/18, p. 4\n" +
+              "of the World Heritage Committee (Baku, 2019)\n" +
+              "4. Report of the Rapporteur of the 42nd session of the World Heritage Committee (Manama,\n" +
+              "2018)\n" +
+              "Decision: 43 COM 4\n" +
+              "The World Heritage Committee,\n" +
+              "1. Takes note of the report of the Rapporteur of the 42nd session of the World Heritage\n" +
+              "Committee (Manama, 2018).\n" +
+              "5. Reports of the World Heritage Centre and the Advisory Bodies\n" +
+              "5A. Report of the World Heritage Centre on its activities and the implementation of the\n" +
+              "World Heritage Committee’s decisions\n" +
+              "Decision: 43 COM 5A\n" +
+              "The World Heritage Committee,\n" +
+              "1. Having examined Document WHC/19/43.COM/5A,\n" +
+              "2. Recalling Decision 42 COM 5A adopted at its 42nd session (Manama, 2018) and Decision\n" +
+              "40 COM 5D adopted at its 40th session (Istanbul/UNESCO, 2016),\n" +
+              "3. Takes note with appreciation of the activities undertaken by the World Heritage Centre over\n" +
+              "the past year in pursuit of the Expected Result to ensure that “Tangible heritage identified,\n" +
+              "protected, monitored and sustainably managed by Member States, in particular through the\n" +
+              "effective implementation of the 1972 Convention”, and the five strategic objectives as\n" +
+              "presented in Document WHC/19/43.COM/5A;\n" +
+              "4. Further notes the efforts by the World Heritage Centre to strengthen the cooperation with\n" +
+              "the other biodiversity-related Multilateral Environmental Agreements in the framework of the\n" +
+              "Biodiversity Liaison Group (BLG), welcomes the first Global Biodiversity Assessment\n" +
+              "presented at the seventh session of Intergovernmental Science-Policy Platform on\n" +
+              "Biodiversity and Ecosystem Services (IPBES) and calls on all States Parties to the\n" +
+              "Convention to actively engage in the preparation of the post-2020 global biodiversity\n" +
+              "framework in order to set an ambitious global agenda to halt biodiversity loss, including\n" +
+              "through the implementation of the World Heritage Convention;\n" +
+              "5. Takes note that only limited voluntary contributions have been committed by States Parties\n" +
+              "for the organization of an expert meeting on memory sites and reiterates its invitation to\n" +
+              "States Parties to contribute financially to this end;\n" +
+              "6. Invites the States Parties to support the activities carried out by the World Heritage Centre\n" +
+              "for the implementation of the Convention;\n" +
+              "7. Requests the World Heritage Centre to present, at its 44th session, a report on its activities. \n" +
+              "Decisions adopted during the 43rd session WHC/19/43.COM/18, p. 5\n" +
+              "of the World Heritage Committee (Baku, 2019)\n" +
+              "5B. Reports of the Advisory Bodies\n" +
+              "Decision: 43 COM 5B\n" +
+              "The World Heritage Committee,\n" +
+              "1. Having examined Document WHC/19/43.COM/5B,\n" +
+              "2. Takes note with appreciation of the reports of the Advisory Bodies (ICCROM, ICOMOS and\n" +
+              "IUCN) on their activities;\n" +
+              "3. Also takes note of the progress made as well as the challenges and gaps identified by the\n" +
+              "Advisory Bodies in the framework of the implementation of the Convention.\n" +
+              "5C. World Heritage Convention and Sustainable Development\n" +
+              "Decision: 43 COM 5C\n" +
+              "The World Heritage Committee,\n" +
+              "1. Having examined Document WHC/19/43.COM/5C,\n" +
+              "2. Recalling Decisions 36 COM 5C, 38 COM 5D, 39 COM 5D, 40 COM 5C and 41 COM 5C\n" +
+              "adopted respectively at its 36th (Saint Petersburg, 2012), 38th (Doha, 2014), 39th (Bonn,\n" +
+              "2015), 40th (Istanbul/UNESCO, 2016) and 41st (Krakow, 2017) sessions, as well as\n" +
+              "Resolution 20 GA 13, adopted by the General Assembly at its 20th session (UNESCO,\n" +
+              "2015),\n" +
+              "3. Welcomes the follow-up activities and the progress made so far in mainstreaming the\n" +
+              "“Policy Document for the integration of a sustainable development perspective into the\n" +
+              "processes of the World Heritage Convention” (WH-SDP) into the activities of the World\n" +
+              "Heritage Centre and the Advisory Bodies and into the processes of the Convention;\n" +
+              "4. Recalling that the WH-SDP stipulates that all dimensions of sustainable development\n" +
+              "should apply to natural, cultural and mixed properties in their diversity, and that sustainable\n" +
+              "development is underpinned by good governance frameworks, requests the States Parties\n" +
+              "to take a systematic and holistic approach to mainstreaming the WH-SDP into their national\n" +
+              "and local policies, processes, and initiatives related to the implementation of the Convention\n" +
+              "and to development in and around World Heritage properties;\n" +
+              "5. Invites the States Parties undertaking activities towards the UN 2030 Agenda for\n" +
+              "Sustainable Development to include synergies with the WH-SDP, whenever possible, in\n" +
+              "order to tap into the potential of the World Heritage Convention to contribute to sustainable\n" +
+              "development;\n" +
+              "6. Encourages the World Heritage Centre, in cooperation with the Advisory Bodies and other\n" +
+              "relevant partners, to reflect on interlinkages between the implementation of the WH-SDP\n" +
+              "and the UN Sustainable Development Goals as well as other relevant global agreements,\n" +
+              "such as those related to climate change and disaster risk reduction, and related World\n" +
+              "Heritage strategies and policies that could inform activities, tools, guidance, and\n" +
+              "communications related to sustainable development; \n" +
+              "Decisions adopted during the 43rd session WHC/19/43.COM/18, p. 6\n" +
+              "of the World Heritage Committee (Baku, 2019)\n" +
+              "7. Also requests the World Heritage Centre pursue, within the available resources, the\n" +
+              "development of activities including policies, tools, operational activities, guidance and\n" +
+              "communication towards operationalising the WH-SDP and supporting the States Parties in\n" +
+              "its implementation;\n" +
+              "8. Calls on States Parties and other potential partners to contribute financially or through inkind support to activities towards mainstreaming and operationalising the WH-SDP;\n" +
+              "9. Decides to inscribe an agenda item concerning World Heritage and Sustainable\n" +
+              "Development at its 45th session in 2021, and finally requests the World Heritage Centre, in\n" +
+              "cooperation with the Advisory Bodies, to present a progress report in this regard.\n" +
+              "5D. Priority Africa, Sustainable Development and World Heritage\n" +
+              "Decision: 43 COM 5D\n" +
+              "The World Heritage Committee,\n" +
+              "1. Having examined Document WHC/19/43.COM/5D,\n" +
+              "2. Recalling Decisions 36 COM 5C, 38 COM 5D, 39 COM 5D, 40 COM 5C, 41 COM 5C, and\n" +
+              "42 COM 17 adopted respectively at its 36th (Saint Petersburg, 2012), 38th (Doha, 2014),\n" +
+              "39th (Bonn, 2015), 40th (Istanbul/UNESCO, 2016), 41st (Krakow, 2017) and 42nd\n" +
+              "(Manama, 2018) sessions respectively, as well as Resolution 20 GA 13, adopted by the\n" +
+              "General Assembly at its 20th session (UNESCO, 2015),\n" +
+              "3. Takes note of the African States Parties’ unique biodiversity and richness and their immense\n" +
+              "wealth of cultural heritage and local knowledge that have come down to humanity so far,\n" +
+              "and that must be conserved and passed on to future generations;\n" +
+              "4. Welcomes with appreciation the activities of the World Heritage Centre along with Field\n" +
+              "Offices, the Advisory Bodies, the African World Heritage Fund (AWHF) and other partners\n" +
+              "in raising awareness and building capacities around various issues related to World\n" +
+              "Heritage and sustainable development in Africa as well as the efforts towards developing\n" +
+              "policy and assessment tools and requests that these efforts be pursued;\n" +
+              "5. Recognizes the specifically delicate task of balancing World Heritage and Sustainable\n" +
+              "Development by the least developed countries, notably of the African region, given that it is\n" +
+              "faced with a disproportionally higher level of poverty globally;\n" +
+              "6. Further recognizes the need to employ innovative and transformative solutions for\n" +
+              "reconciling World Heritage and Sustainable Development that will take into account the\n" +
+              "nature, complexity and specificity of socio-economic constraints that these less developed\n" +
+              "countries continue to face;\n" +
+              "7. Takes note of the Position Paper on World Heritage and Sustainable Development in Africa\n" +
+              "adopted in October 2018 by the African Union through resolution STC/YCS3/MIN/Report 67, as acknowledged in paragraph 20 d) of the Document\n" +
+              "WHC/19/43.COM/6;\n" +
+              "8. Recalls its Decision 37 COM 7 (Part III) which urges all States Parties to the World Heritage\n" +
+              "Convention and leading industry stakeholders, to respect the International Council on \n" +
+              "Decisions adopted during the 43rd session WHC/19/43.COM/18, p. 7\n" +
+              "of the World Heritage Committee (Baku, 2019)\n" +
+              "Mining & Metals (ICMM) “No-go” commitment by not permitting extractive activities within\n" +
+              "World Heritage properties, and by making every effort to ensure that extractive companies\n" +
+              "located in their territory cause no damage to World Heritage properties, in line with Article 6\n" +
+              "of the Convention;\n" +
+              "9. Reiterates the need to integrate the protection of the Outstanding Universal Value (OUV) of\n" +
+              "World Heritage properties with inclusive and sustainable development needs through the\n" +
+              "effective implementation of the World Heritage Sustainable Development Policy (WH-SDP)\n" +
+              "aligned with the 2030 Agenda for Sustainable Development; the protection of the\n" +
+              "Outstanding Universal Value should be furthermore ensured by including Environmental\n" +
+              "Impact Assessment (EIA), Heritage Impact Assessment (HIA), Strategic Environmental\n" +
+              "Assessment (SEA), in national and international development projects, in accordance with\n" +
+              "Paragraph 172 of the Operational Guidelines;\n" +
+              "10. Calls upon the African States Parties to strengthen governance of World Heritage properties\n" +
+              "and mainstream the WH-SDP principles in national and local conservation and\n" +
+              "management activities in and around World Heritage properties and processes related to\n" +
+              "World Heritage in Africa, and to mainstream them in national and local plans for\n" +
+              "development;\n" +
+              "11. Further calls upon African States Parties to focus their development efforts to benefit local\n" +
+              "communities, including them in the decision-making, and building on their knowledge and\n" +
+              "needs with progressive and proactive conservation of natural and cultural heritage; and to\n" +
+              "create enabling environments for innovative solutions inclusive of green and blue\n" +
+              "economies while progressing towards other SDGs;\n" +
+              "12. Calls upon all States Parties to the World Heritage Convention as well as international\n" +
+              "agencies and development partners, international finance institutions, industries, private\n" +
+              "sector, and other partners including multi and bi-lateral partners to join in ensuring policy\n" +
+              "coherence and harness synergies in multilateral agreements, investments, and protocols.\n" +
+              "These include the UN 2030 Agenda, and the “Africa 2063” Agenda as well as the WH-SDP\n" +
+              "to deliver multiple benefits, with inclusive governance mechanisms that bring all round\n" +
+              "benefits to the local communities in and around World Heritage properties;\n" +
+              "13. Thanks the States Parties and partners who have generously contributed to strengthening\n" +
+              "sustainable development in Africa and invites all States Parties to the World Heritage\n" +
+              "Convention to support, financially and through other means, awareness-raising and\n" +
+              "capacity-reinforcement programmes at various levels as well as activities aimed at\n" +
+              "developing guidance, innovative solutions, tools, mechanisms, and strategies for integrating\n" +
+              "heritage conservation into sustainable development policies and programmes and\n" +
+              "mainstreaming the sustainable development approach in conservation and management\n" +
+              "activities in Africa;\n" +
+              "14. Also invites the Secretariat and Advisory Bodies, in collaboration with African States Parties,\n" +
+              "the African World Heritage Fund (AWHF) and other stakeholders to spearhead research\n" +
+              "into innovative solutions for sustainable development, providing measures at the\n" +
+              "operational level, that guide and coordinate the efforts of the African States Parties to the\n" +
+              "World Heritage Convention for the conservation of OUV in World Heritage properties, both\n" +
+              "cultural and natural, and their contribution to the sustainable development of local\n" +
+              "communities in particular; and also to establish a platform of good practices in integrating\n" +
+              "heritage conservation with sustainable development for African World Heritage properties;\n" +
+              "15. Requests the World Heritage Centre to present, at its 44th session in 2020, a progress\n" +
+              "report on Priority Africa, Sustainable Development and World Heritage.\n" +
+              "Decisions adopted during the 43rd session WHC/19/43.COM/18, p. 8\n" +
+              "of the World Heritage Committee (Baku, 2019)\n" +
+              "5E. Report on strengthening of dialogue between the Advisory Bodies and States Parties\n" +
+              "Decision: 43 COM 5E\n" +
+              "The World Heritage Committee,\n" +
+              "1. Having examined Document WHC/19/43.COM/5E,\n" +
+              "2. Recalling Decisions 39 COM 5C, 39 COM 13A (Bonn, 2015), 40 COM 5B\n" +
+              "(Istanbul/UNESCO, 2016), 41 COM 5B, 41 COM 7, 41 COM 11 (Krakow, 2017), 42 COM\n" +
+              "5B and 42 COM 9A (Manama, 2018),\n" +
+              "3. Also recalling paragraphs 71, 72, and 73 of the Operational Guidelines, encouraging States\n" +
+              "Parties to seek early advice from the Advisory Bodies for the preparation and update of their\n" +
+              "Tentative Lists and paragraph 74 highlighting the importance of capacity building for\n" +
+              "Tentative List preparation,\n" +
+              "4. Recognizing that the question of dialogue has long been a matter of reflection between the\n" +
+              "stakeholders involved in the implementation of the World Heritage Convention, and further\n" +
+              "recalling in this regard the “Thinking Ahead” initiative (2012-2015) to improve dialogue,\n" +
+              "communication and transparency among States Parties and Advisory Bodies notably, with\n" +
+              "the objective of enhancing the credibility of the Convention,\n" +
+              "5. Calls upon States Parties preparing to revise their Tentative Lists and undertaking Tentative\n" +
+              "List harmonization processes to engage in dialogue with the Advisory Bodies at the earliest\n" +
+              "possible stage of the process;\n" +
+              "6. Also calls upon States Parties to comply with Paragraph 172 of the Operational Guidelines,\n" +
+              "and inform the Committee at the earliest stage possible, and before any irreversible\n" +
+              "decisions are made, of their intention to undertake or to authorize major restorations or new\n" +
+              "constructions which may affect the Outstanding Universal Value of a property, to ensure that\n" +
+              "dialogue may take place at the appropriate time;\n" +
+              "7. Requests the Advisory Bodies to prepare specific capacity building modules on the\n" +
+              "nomination and management planning processes, pending the availability of sufficient\n" +
+              "funds, and also requests interested States Parties to contribute financial resources towards\n" +
+              "the creation and implementation of such modules by the Advisory Bodies, the World\n" +
+              "Heritage Centre and Category 2 Centres;\n" +
+              "8. Further requests the World Heritage Centre, the Advisory Bodies and the States Parties to\n" +
+              "continue to develop innovative ideas to promote and strengthen dialogue which can be\n" +
+              "implemented on a trial basis to ensure their effectiveness and absence of unintended\n" +
+              "negative consequences and recommends that these be taken into account in the framework\n" +
+              "of the Reactive Monitoring process, as well as in the framework of the reform of the\n" +
+              "nomination process;\n" +
+              "9. Invites the Advisory Bodies to engage in effective and constructive dialogue with States\n" +
+              "Parties in the preparation of Tentative Lists, in the nomination process, including before the\n" +
+              "publication of recommendations, and post inscription (including monitoring missions), with\n" +
+              "the aim of achieving more effective credibility, transparency and better implementation of\n" +
+              "the Convention and Sustainable Development Goals.\n" +
+              "Decisions adopted during the 43rd session WHC/19/43.COM/18, p. 9\n" +
+              "of the World Heritage Committee (Baku, 2019)\n" +
+              "6. Follow-up to the World Heritage Capacity-building Strategy and progress report on the\n" +
+              "World Heritage-related Category 2 Centres\n" +
+              "Decision: 43 COM 6\n" +
+              "The World Heritage Committee,\n" +
+              "1. Having examined Document WHC/19/43.COM/6,\n" +
+              "2. Recalling Decision 42 COM 6, adopted at its 42nd session (Manama, 2018),\n" +
+              "3. Commends the progress made in the implementation of the World Heritage CapacityBuilding Strategy (WHCBS);\n" +
+              "4. Requests ICCROM, in cooperation with the World Heritage Centre, IUCN and ICOMOS, to\n" +
+              "carry out a results-based evaluation of the implementation of the World Heritage CapacityBuilding Strategy, consulting Category 2 Centres and other capacity building partners, for\n" +
+              "examination by the Committee at its 45th session in 2021;\n" +
+              "5. Further requests ICCROM, in cooperation with the World Heritage Centre, IUCN, ICOMOS,\n" +
+              "the Category 2 Centres, and other capacity building partners, based on the abovementioned evaluation, to review progress and outcomes of the World Heritage CapacityBuilding Strategy for examination by the World Heritage Committee at its 46th session in\n" +
+              "2022;\n" +
+              "6. Invites States Parties to contribute extra-budgetary resources for the evaluation of the World\n" +
+              "Heritage Capacity-Building Strategy and its revision;\n" +
+              "7. Notes with appreciation the support from States Parties to capacity building;\n" +
+              "8. Calls upon other States Parties and organizations to provide additional funding and support\n" +
+              "for the implementation of the World Heritage Leadership Programme and other activities as\n" +
+              "part of the World Heritage Capacity-Building Strategy at the international and regional\n" +
+              "levels;\n" +
+              "9. Takes note of the implementation of the regional capacity-building strategies and initiatives,\n" +
+              "and also calls upon States Parties and all concerned partners and stakeholders to follow up\n" +
+              "on the implementation of the strategies developed for each region;\n" +
+              "10. Welcomes the progress made by the category 2 centres related to World Heritage in\n" +
+              "implementing their activities and further calls upon interested stakeholders to support these\n" +
+              "activities;\n" +
+              "11. Encourages the Advisory Bodies and the category 2 centres to establish joint regional\n" +
+              "capacity-building programmes which facilitate and promote knowledge and experience\n" +
+              "exchanges among professionals, institutions and other stakeholders;\n" +
+              "12. Requests the World Heritage Centre and ICCROM to submit an in-depth report on the\n" +
+              "implementation of the World Heritage Capacity-Building Strategy by improving the quality\n" +
+              "of its content by emphasizing concrete outcomes and the activities of the category 2 centres\n" +
+              "related to World Heritage for examination by the Committee at its 44th session in 2020. \n" +
+              "Decisions adopted during the 43rd session WHC/19/43.COM/18, p. 10\n" +
+              "of the World Heritage Committee (Baku, 2019)\n" +
+              "7. State of Conservation of World Heritage properties\n" +
+              "Statutory matters related to Reactive Monitoring\n" +
+              "Decision: 43 COM 7.1\n" +
+              "The World Heritage Committee,\n" +
+              "1. Having examined Documents WHC/19/43.COM/7,\n" +
+              "2. Recalling Decisions 40 COM 7, 41 COM 7, and 42 COM 7, adopted at its 40th\n" +
+              "(Istanbul/UNESCO, 2016), 41st (Krakow, 2017) and 42nd (Manama, 2018) sessions\n" +
+              "respectively,\n" +
+              "3. Thanks the State Party of Azerbaijan, Host Country of the 43rd session of the World\n" +
+              "Heritage Committee (Baku, 2019), for having organized the third World Heritage Site\n" +
+              "Managers’ Forum, as a capacity-building exercise aimed at increasing the understanding of\n" +
+              "the World Heritage decision-making process among site managers, in order to achieve\n" +
+              "more effective protection of Outstanding Universal Value (OUV), takes note with\n" +
+              "appreciation of the 2019 World Heritage Site Managers’ Forum Statement and encourages\n" +
+              "the future Host Countries to continue this initiative in conjunction with the World Heritage\n" +
+              "Committee session;\n" +
+              "Evaluation of the Reactive Monitoring process\n" +
+              "4. Taking note with appreciation of the evaluation of the Reactive Monitoring process launched\n" +
+              "by the World Heritage Centre, thanks the State Party of Switzerland for its financial support,\n" +
+              "as well as the experts tasked with this evaluation, for their thorough analysis of this process,\n" +
+              "instrumental in achieving the objectives of the World Heritage Convention;\n" +
+              "5. Expresses its gratitude to all the stakeholders of the Convention who have actively\n" +
+              "contributed to this evaluation;\n" +
+              "6. Notes that the recommendations formulated in the evaluation refer to improvements of the\n" +
+              "current practices and do not call for structural changes nor amendments to the statutory\n" +
+              "documents, and requests all stakeholders of the Convention to take them on-board and\n" +
+              "implement them at their level as soon as possible;\n" +
+              "7. Agrees that the World Heritage Centre should prioritize implementation of the high priority\n" +
+              "recommendations, with an initial focus on those relevant to communication, capacitybuilding, including for site managers, and finance;\n" +
+              "8. Also requests the World Heritage Centre to present a progress report on the implementation\n" +
+              "of the recommendations, for examination by the World Heritage Committee at its 44th\n" +
+              "session in 2020;\n" +
+              "Issues related to the List of World Heritage in Danger\n" +
+              "9. Reaffirming the need to promote a better understanding of the implications and benefits of\n" +
+              "properties being inscribed on the List of World Heritage in Danger,\n" +
+              "10. Thanks the State Party of Romania for its initiative to host a multi-stakeholder international\n" +
+              "workshop focusing on the List of World Heritage in Danger, including exchange of good \n" +
+              "Decisions adopted during the 43rd session WHC/19/43.COM/18, p. 11\n" +
+              "of the World Heritage Committee (Baku, 2019)\n" +
+              "practice, promotion of the properties inscribed on this List and the conservation needs to\n" +
+              "improve their state of conservation, such as Costed Action Plans;\n" +
+              "11. Requests the World Heritage Centre to present a report on this workshop and other\n" +
+              "initiatives related to the List of World Heritage in Danger at the 44th session in 2020;\n" +
+              "Selection of the World Heritage properties to be proposed for discussion\n" +
+              "12. Reaffirming the importance of focusing the debates on those properties and global\n" +
+              "conservation issues of greatest concern during the World Heritage Committee sessions,\n" +
+              "and taking into account the results of the evaluation of the Reactive Monitoring process,\n" +
+              "13. Supports the outcomes of the reflection conducted by the World Heritage Centre and the\n" +
+              "Advisory Bodies regarding the elaboration of the list of state of conservation reports to be\n" +
+              "proposed for discussion by the Committee, as well as the current practice allowing\n" +
+              "Committee members to add to this list the reports they wish to discuss, by providing a written\n" +
+              "request to the Chairperson of the Committee, through the World Heritage Centre, sufficiently\n" +
+              "in advance of the session, and indicating the reason why the reports are requested to be\n" +
+              "opened for discussion;\n" +
+              "14. Recognizes that the selection of the state of conservation reports to be discussed by the\n" +
+              "Committee during its sessions should be based on clear and objective criteria, including the\n" +
+              "level of threat to the property, rather than being based on representativity.\n" +
+              "Pressing conservation issues\n" +
+              "Decision: 43 COM 7.2\n" +
+              "The World Heritage Committee,\n" +
+              "1. Having examined Documents WHC/19/43.COM/7, WHC/19/43.COM/7A,\n" +
+              "WHC/19/43.COM/7A.Add, WHC/19/43.COM/7A.Add.2, WHC/19/43.COM/7A.Add.3,\n" +
+              "WHC/19/43.COM/7B, WHC/19/43.COM/7B.Add, WHC/19/43.COM/7B.Add.2 and\n" +
+              "WHC/19/43.COM/7A.Add.3,\n" +
+              "2. Recalling Decisions 40 COM 7, 41 COM 7, and 42 COM 7, adopted at its 40th\n" +
+              "(Istanbul/UNESCO, 2016), 41st (Krakow, 2017) and 42nd (Manama, 2018) sessions\n" +
+              "respectively,\n" +
+              "Emergency situations resulting from conflicts\n" +
+              "3. Deplores the loss of human life as well as the degradation of humanitarian conditions\n" +
+              "resulting from the prevailing conflict situations in several countries, and expresses its utmost\n" +
+              "concern at the devastating damage sustained and the continuing threats facing cultural and\n" +
+              "natural heritage in general;\n" +
+              "4. Expresses its deep concern at the inter-community conflicts observed in Mali between the\n" +
+              "Dogon and Fulani communities, which have caused considerable loss of human life and\n" +
+              "significant damage to the cultural heritage, particularly within the World Heritage property\n" +
+              "of the Cliffs of Bandiagara (Land of the Dogons);\n" +
+              "5. Thanks the State Party of Mali for the urgent actions that have been put in place to ensure\n" +
+              "the safety of communities in and around the property, and encourages the State Party, to \n" +
+              "Decisions adopted during the 43rd session WHC/19/43.COM/18, p. 12\n" +
+              "of the World Heritage Committee (Baku, 2019)\n" +
+              "also take into account in its actions the protection of the property’s rich cultural heritage,\n" +
+              "and to do so in collaboration with the stakeholders involved in the establishment of longterm peace in Mali;\n" +
+              "6. Welcomes the dispatch of a UNESCO mission to assess the damage caused to the\n" +
+              "property, and identify the needs related to the built and intangible cultural heritage and the\n" +
+              "objects and practices associated with the Cliffs of Bandiagara, in order to propose an Action\n" +
+              "Plan for the rehabilitation of the villages concerned;\n" +
+              "7. Urges again all parties associated with conflicts to refrain from any action that would cause\n" +
+              "further damage to cultural and natural heritage and to fulfill their obligations under\n" +
+              "international law by taking all possible measures to protect such heritage, in particular the\n" +
+              "safeguarding of World Heritage properties and the sites included in the Tentative List;\n" +
+              "8. Also urges again States Parties to adopt measures against using World Heritage properties\n" +
+              "for military purposes and to stop related uncontrolled development and impact;\n" +
+              "9. Reiterates its utmost concern about the continuing threats of wildlife poaching and illegal\n" +
+              "trafficking of wildlife products linked to impacts of conflict and organized crime, which is\n" +
+              "eroding the biodiversity and Outstanding Universal Value (OUV) of many World Heritage\n" +
+              "sites across the world, and urges States Parties to take the necessary measures to curb\n" +
+              "this problem, including through the implementation of the Convention on International Trade\n" +
+              "in Endangered Species of Wild Fauna and Flora (CITES);\n" +
+              "10. Calls upon the international community to further support the safeguarding of the cultural\n" +
+              "and natural heritage of countries affected by conflict, through earmarked funds or through\n" +
+              "contributions to the UNESCO Heritage Emergency Fund;\n" +
+              "11. Appeals to all Member States of UNESCO to cooperate in the fight against the illicit\n" +
+              "trafficking of cultural objects, as well as cultural heritage protection in general, including\n" +
+              "through the implementation of United Nations Security Council Resolutions 2199 (2015),\n" +
+              "2253 (2015) and 2347 (2017);\n" +
+              "Reconstruction\n" +
+              "12. Thanks the State Party of Poland for the efforts to widely disseminate the Warsaw\n" +
+              "Recommendation on Recovery and Reconstruction of Cultural Heritage, as well as the\n" +
+              "proceedings of the international conference \"The Challenges of World Heritage Recovery\"\n" +
+              "held in Warsaw in May 2018;\n" +
+              "13. Welcomes the policy document \"Culture in the reconstruction and rehabilitation of cities\",\n" +
+              "published by UNESCO and the World Bank, which contributes to the reflection launched on\n" +
+              "the challenges related to the reconstruction of World Heritage properties;\n" +
+              "14. Requests the World Heritage Centre, ICOMOS and ICCROM and the States Parties to the\n" +
+              "World Heritage Convention, to continue the reflection on the recovery and reconstruction of\n" +
+              "World Heritage properties, and requests the World Heritage Centre and the Advisory Bodies\n" +
+              "report back to the World Heritage Committee on the progress made in improving advice in\n" +
+              "this regard;\n" +
+              "Climate Change\n" +
+              "15. Notes with appreciation the initiatives taken by the World Heritage Centre and the Advisory\n" +
+              "Bodies to advance work on updating the Policy Document on the Impacts of Climate \n" +
+              "Decisions adopted during the 43rd session WHC/19/43.COM/18, p. 13\n" +
+              "of the World Heritage Committee (Baku, 2019)\n" +
+              "Change on World Heritage properties, including through a planned widespread online\n" +
+              "consultation with States Parties, Advisory Bodies and civil society;\n" +
+              "16. Requests that the development of the updated Policy Document be completed for\n" +
+              "consideration by the Committee at its 44th session in 2020;\n" +
+              "17. Welcomes the initiative taken by the World Heritage Centre together with a global privatepublic consortium of partners, to build climate adaptation strategies across five marine\n" +
+              "World Heritage sites in Australia, Belize, France and Palau;\n" +
+              "18. Urges all States Parties to step up action toward better understanding the climate\n" +
+              "vulnerability of World Heritage properties and put in place adaptation strategies that\n" +
+              "strengthen the resilience of properties and ensure the conservation of their Outstanding\n" +
+              "Universal Value.\n" +
+              "Other matters\n" +
+              "Decision: 43 COM 7.3\n" +
+              "The World Heritage Committee,\n" +
+              "1. Having examined Documents WHC/19/43.COM/7, WHC/19/43.COM/7A,\n" +
+              "WHC/19/43.COM/7A.Add, WHC/19/43.COM/7A.Add.2, WHC/19/43.COM/7A.Add.3,\n" +
+              "WHC/19/43.COM/7B, WHC/19/43.COM/7B.Add, WHC/19/43.COM/7B.Add.2 and\n" +
+              "WHC/19/43.COM/7A.Add.3,\n" +
+              "2. Recalling Decision 42 COM 7, adopted at its 42nd (Manama, 2018),\n" +
+              "Management Plans in the context of urban development\n" +
+              "3. Noting that the many Management Plans and management systems for urban properties\n" +
+              "are not adequately anchored in the legal mechanisms, systems, and processes for urban\n" +
+              "development,\n" +
+              "4. Also noting that the pressures of high investment urban development projects in and around\n" +
+              "properties are increasingly a threat to their Outstanding Universal Value (OUV), and that in\n" +
+              "contrast, the OUV could provide a valuable opportunity for the property and its wider setting\n" +
+              "to define a new urban vision that integrates and valorizes the OUV with new needs and\n" +
+              "aspirations,\n" +
+              "5. Recalling that the approach of the 2011 UNESCO Recommendation on the Historic Urban\n" +
+              "Landscape has highlighted the need for urban areas to be well integrated into their wider\n" +
+              "social, economic and cultural context, calls on all States Parties to prepare and deliver\n" +
+              "Management Plans, for properties in and around urban areas, so that their planning\n" +
+              "elements can be integrated directly into the planning and development policies, plans,\n" +
+              "processes and instruments; regardless of whether the property is inscribed for its urban\n" +
+              "values or not;\n" +
+              "6. Requests the World Heritage Centre and the Advisory Bodies to continue reflecting on the\n" +
+              "mechanisms and tools needed to assess and guide interventions in and around urban\n" +
+              "properties to sustain the OUV of the properties and to promote sustainable development\n" +
+              "and actively engage with the wider development processes that could over time impact the\n" +
+              "appearance, use, and meaning of buildings and spaces in properties and their settings;\n" +
+              "Decisions adopted during the 43rd session WHC/19/43.COM/18, p. 14\n" +
+              "of the World Heritage Committee (Baku, 2019)\n" +
+              "7. Notes with appreciation the International Union of Architects Forum (UIA) on “Mass Tourism\n" +
+              "in Historic Cities”, which was held in Baku, Azerbaijan, on 7-9 June 2019 and welcomes the\n" +
+              "proposal of the UIA to prepare, in close cooperation with the World Heritage Centre and the\n" +
+              "Advisory Bodies, guidelines for architectural competitions in and around World Heritage\n" +
+              "urban properties that will recognise their Outstanding Universal Value;\n" +
+              "8. Welcomes the offer of the Government of Japan to host an international experts meeting in\n" +
+              "January 2020 to provide further guidelines for the integration of the assessment of the\n" +
+              "impacts for interventions in the wider processes of urban management by applying the 2011\n" +
+              "Recommendation on the Historic Urban Landscape to address the challenges of increased\n" +
+              "urbanization in close cooperation with the World Heritage Centre and the Advisory Bodies;\n" +
+              "9. Calls on the UNESCO Secretariat to develop measures to address the inherently limited\n" +
+              "nature of institutional capacity in SIDS, acting as an impediment in identifying, inventorying\n" +
+              "and proposing potential cultural and natural heritage sites for listing;\n" +
+              "Tourism\n" +
+              "10. Acknowledging the contribution of sustainable tourism to the 2030 Agenda on Sustainable\n" +
+              "Development and the positive impact it can have on local communities and the protection\n" +
+              "of World Heritage properties, nevertheless notes with concern that the number of properties\n" +
+              "negatively affected by overcrowding, congestion and tourism infrastructure development\n" +
+              "continues to increase;\n" +
+              "11. Noting that the protection of Outstanding Universal Value (OUV) must be a central objective\n" +
+              "for all World Heritage properties, requests States Parties to develop visitor management\n" +
+              "plans and strategies that address the seasonality of tourism (smoothing visitor numbers\n" +
+              "over time and spreading visitors across sites), encourage longer more in-depth experiences\n" +
+              "promoting tourism products and services that reflect natural and cultural values, and limit\n" +
+              "access and activities to improve visitor flows and experiences, while reducing pressures on\n" +
+              "the attributes which underpin OUV ;\n" +
+              "12. Encourages the States Parties to support UNESCO in its efforts to assist heritage and\n" +
+              "tourism managers with system development and data collection to help destinations\n" +
+              "understand their specific situations and early warning signs, provide incentives for\n" +
+              "sustainable tourism development and raise awareness to change visitor behaviour;\n" +
+              "13. Calls on UNESCO Secretariat to recognize opportunities for forging synergies between core\n" +
+              "UNESCO activities that could be harnessed to strengthen heritage sites: youth, heritage\n" +
+              "tourism training, sustainable heritage tourism and biodiversity, and relate it directly to SIDS;\n" +
+              "Heritage Impact Assessments / Environmental Impact Assessments (HIAs/EIAs)\n" +
+              "14. Notes the progress of revising the guidance on impact assessment for World Heritage\n" +
+              "undertaken by the ICCROM/IUCN World Heritage Leadership Programme together with the\n" +
+              "World Heritage Centre and ICOMOS.\n" +
+              "7A. State of conservation of the properties inscribed on the List of World Heritage in\n" +
+              "Danger\n" +
+              "NATURAL PROPERTIES"
+    });
+    $(window).on('load', function () {
+      $('#click-btn').on('click', function () {
+        loadText();
+      });
+    });
+    function loadText(){
+      var sentence = out.toString();
+      sentence = sentence.replace(/\r?\n/g, ' ');
+      drawWorldCloud(sentence);
+      document.getElementById("titlediv").innerHTML = out2.toString();
+    }
+
+
+    function drawWorldCloud(sentence) {
+      am4core.useTheme(am4themes_animated);
+
+      var chart = am4core.create("chartdiv", am4plugins_wordCloud.WordCloud);
+      var series = chart.series.push(new am4plugins_wordCloud.WordCloudSeries());
+
+      series.accuracy = 4;
+      series.step = 15;
+      series.rotationThreshold = 0.7;
+      series.maxCount = 200;
+      series.minWordLength = 2;
+      series.labels.template.tooltipText = "{word}: {value}";
+      series.fontFamily = "'M PLUS 1p', sans-serif";
+      series.maxFontSize = am4core.percent(30);
+      series.excludeWords = ["the", "a", "an", "of", "to", "with", "for","from", "and", "but","in","on","is","are","by","at"]
+
+      series.text = sentence;
+
+      series.colors = new am4core.ColorSet();
+      series.colors.passOptions = {}; // makes it loop
+
+      setInterval(function () {
+        series.dataItems.getIndex(Math.round(Math.random() * (series.dataItems.length - 1))).setValue("value", Math.round(Math.random() * 10));
+      }, 10000)
+    }
+
+  </script>
+
+  <!-- HTML -->
+  <div class ="box" id="titlediv"></div>
+  <div id="chartdiv"></div>
+  </html>
+
+</div>
+
+
+</html>
+

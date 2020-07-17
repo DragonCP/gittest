@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorator="layout/default">
+
+<head>
+    <title>Board</title>
+
+</head>
+<script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+
+<th:block layout:fragment="content">
+    <!-- Begin Page Content -->
+    <div class="container-fluid">
+        <!-- Page Heading -->
+        <h1 class="h3 mt-2 mb-2 text-gray-800">Inform</h1>
+        <p class="mb-4">Information</p>
+
+        <!-- DataTales Example -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">information</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                        <tr>
+                            <th>Number</th>
+                            <th>Title</th>
+                            <th>Article content</th>
+                            <th>Writer</th>
+                            <th>Article number</th>
+                        </tr>
+                        </thead>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col align-self-end">
+                <a class="btn btn-secondary btn-icon-split float-right" onclick="alert('Only write oprator');" th:href="@{/boards/form} ">
+                    <span class="text">Write</span>
+
+                </a>
+            </div>
+        </div>
+
+        <hr/>
+
+    </div>
+
+</th:block>
+<!-- board.html 고유 script 추가 -->
+<th:block layout:fragment="pageScript">
+
+    <script>
+        $(document).ready(function () {
+
+            // DataTable
+            var tables = $('#dataTable').DataTable({
+                // 한 페이지에 기본으로 보여줄 항목 수
+                pageLength: 10,
+                // 페이징 처리 여부
+                paginate: true,
+                pagingType: "full_numbers",
+                // 한 페이지에 보여줄 항목 수 변경가능여부
+                bLengthChange: false,
+                //"bLengthChange" 리스트 항목을 구성할 옵션
+                // lengthMenu: [3, 5, 10, 20],
+                // 자동 컬럼 폭을 계산하여 반영
+                bAutoWidth: true,
+                // 로딩 표시 여부
+                processing: true,
+                // 항목의 정렬 사용여부
+                ordering: false,
+                // 그리드 내에서 이루어지는 모든 상황들(검색, 페이징, 정렬 등)에 대한 처리를 서버측에서 수행 여부
+                bServerSide: true,
+                // 글로벌 searching 기능
+                // searching: true,
+
+                // ajax: '/boards/lists',
+
+                ajax: {
+                    "url": "/boards/lists",
+                    "type": "GET",
+                    "data": function (d) {
+                        d.page = (d.start / d.length) + 1;
+                    },
+                    "dataFilter": function (data) {
+                        var json = jQuery.parseJSON(data);
+                        json.data = json.content;
+                        json.recordsTotal = json.totalElements;
+                        json.recordsFiltered = json.totalElements;
+                        return JSON.stringify(json);
+                    }
+                },
+                columns: [
+                    {data: "boardSeq", name: "boardSeq", title: "글번호"},
+                    {data: "boardTitle", name: "boardTitle", title: "글제목"},
+                    {data: "boardContents", name: "boardContents", title: "글내용"},
+                    {data: "member.memberName", name: "memberName", title: "글쓴이"},
+                    {data: "member.memberMobile", name: "memberMobile", title: "글쓴이 번호"}
+                ],
+                columnDefs: [
+                    {
+                        "targets": [0, 1, 2, 3, 4],
+                        "visible": true
+                    }
+                ],
+                "language": {
+                    "emptyTable": "데이터가 없어요.",
+                    "lengthMenu": "페이지당 _MENU_ 개씩 보기",
+                    "info": "NOW _START_ - _END_ / _TOTAL_건",
+                    "infoEmpty": "데이터 없음",
+                    "infoFiltered": "( _MAX_건의 데이터에서 필터링됨 )",
+                    "search": "검색: ",
+                    "zeroRecords": "일치하는 데이터가 없어요.",
+                    "loadingRecords": "로딩중...",
+                    "processing":     "잠시만 기다려 주세요...",
+                    "paginate": {
+                        "first":"처음",
+                        "next": "다음",
+                        "previous": "이전",
+                        "last":"마지막"
+                    }
+                }
+            });
+
+
+            // DataTable Row Click
+            $("#dataTable tbody").on('click', 'tr', function () {
+                var data = tables.row(this).data();
+                window.location = "/boards/" + data.boardSeq;
+            });
+        });
+    </script>
+
+</th:block>
+
+</html>

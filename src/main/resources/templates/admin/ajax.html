@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Insert title here</title>
+
+</head>
+<body>
+<p id="demo"></p>
+<button onclick="myfunc()">Copy Text</button>
+
+<script type="text/javascript">
+    var xmlhttp = new XMLHttpRequest();
+    var url = "/admin/json";
+
+    xmlhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            myfunc(xmlhttp.responseText);
+        }
+    };
+    xmlhttp.open("GET", url, true);
+    xmlhttp.send();
+
+    function myfunc(resp) {
+        var arr = JSON.parse(resp);
+        var out = "<table border='1'>";
+
+        for (var i = 0; i < arr.length; i++) {
+            out+=
+                "<tr>"+
+                "<td>"+ arr[i].id + "</td>" +
+                "<td>"+ arr[i].count + "</td>" +
+                "<td>"+ arr[i].time + "</td>" +
+                "</tr>";
+        }
+        document.getElementById('demo').innerHTML = out;
+    }
+</script>
+</body>
+</html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Insert title here</title>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+</head>
+<body>
+
+<input type="hidden" id="Pname">
+<br>
+<input type="text" id="Pname1">
+<button type="button" id="btn2">이름으로 찾기</button>
+
+<p id="comeonSolo"></p>
+<p id="comeonDuo"></p>
+<div id="chartdiv"></div>
+
+
+
+</body>
+</html>
+<style>
+    #chartdiv {
+        width:100%;
+        height: 500px;
+    }
+</style>
+
+<!-- Resources -->
+<script src="https://www.amcharts.com/lib/4/core.js"></script>
+<script src="https://www.amcharts.com/lib/4/charts.js"></script>
+<script src="https://www.amcharts.com/lib/4/plugins/wordCloud.js"></script>
+<script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>
+
+<!-- Chart code -->
+<!-- Styles -->
+<style>
+    #chartdiv {
+        width: 100%;
+        height: 500px;
+    }
+
+</style>
+
+<!-- Resources -->
+<script src="https://www.amcharts.com/lib/4/core.js"></script>
+<script src="https://www.amcharts.com/lib/4/charts.js"></script>
+<script src="https://www.amcharts.com/lib/4/themes/animated.js"></script>
+
+<script type="text/javascript">
+    $("button").click(
+        function() {
+
+
+            var btnId = this.id;
+            var xhttp = new XMLHttpRequest();
+
+            xhttp.onreadystatechange = function() {
+                if (xhttp.readyState == 4
+                    && xhttp.status == 200) {
+                    myfunc(xhttp.responseText, btnId);
+                }
+            }
+            xhttp.open("GET", "/admin/json", true);
+            xhttp.send();
+
+
+
+// Add data
+
+            function myfunc(resp, id) {
+                arr = JSON.parse(resp);
+                out = "";
+                arr2 = [];
+                arr3 = [];
+                for (var i = 0; i < arr.length; i++) {
+
+                    for (key in arr[i]) {
+                        if (id == "btn1") {
+                            if (key == $("#Pname").val()) {
+                                out += arr[i][key] + "<br>";
+                                break;
+                            }
+                        } else if (id == "btn2") {
+                            if (arr[i][key] == $("#Pname1")
+                                .val()) {
+                                out += "{"+'"date"' + ":" + '"' +arr[i].time+'"'+","
+                                    +'"value"'+":"+ arr[i].count+"}"+",";
+                                arr2.push(arr[i].time);
+                                arr3.push(arr[i].count);
+
+
+
+
+
+                                break;
+                            }
+                        }
+                    }
+
+                }
+                data1= [];
+                data1 = out;
+
+                if (id == "btn1") {
+                    document.getElementById("comeonSolo").innerHTML = out;
+
+
+                } else if (id == "btn2") {
+                    document.getElementById("comeonDuo").innerHTML = out;
+
+                    jQuery('#btn2').click(
+                        am4core.ready(function() {
+                            var chart = am4core.create("chartdiv", am4charts.XYChart);
+
+// Add data
+                            data1 = [];
+                            for (var i = 0; i < arr.length; i++)
+                            {    data1.push({ date: arr2[i], value:arr3[i] });
+                            };
+                            chart.data = data1;
+
+// Set input format for the dates
+                            chart.dateFormatter.inputDateFormat = "yyyy-MM-dd";
+
+// Create axes
+                            var dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+                            var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+
+// Create series
+                            var series = chart.series.push(new am4charts.LineSeries());
+                            series.dataFields.valueY = "value";
+                            series.dataFields.dateX = "date";
+                            series.tooltipText = "{value}"
+                            series.strokeWidth = 2;
+                            series.minBulletDistance = 15;
+
+// Drop-shaped tooltips
+                            series.tooltip.background.cornerRadius = 20;
+                            series.tooltip.background.strokeOpacity = 0;
+                            series.tooltip.pointerOrientation = "vertical";
+                            series.tooltip.label.minWidth = 40;
+                            series.tooltip.label.minHeight = 40;
+                            series.tooltip.label.textAlign = "middle";
+                            series.tooltip.label.textValign = "middle";
+
+// Make bullets grow on hover
+                            var bullet = series.bullets.push(new am4charts.CircleBullet());
+                            bullet.circle.strokeWidth = 2;
+                            bullet.circle.radius = 4;
+                            bullet.circle.fill = am4core.color("#fff");
+
+                            var bullethover = bullet.states.create("hover");
+                            bullethover.properties.scale = 1.3;
+
+// Make a panning cursor
+                            chart.cursor = new am4charts.XYCursor();
+                            chart.cursor.behavior = "panXY";
+                            chart.cursor.xAxis = dateAxis;
+                            chart.cursor.snapToSeries = series;
+
+// Create vertical scrollbar and place it before the value axis
+                            chart.scrollbarY = new am4core.Scrollbar();
+                            chart.scrollbarY.parent = chart.leftAxesContainer;
+                            chart.scrollbarY.toBack();
+
+// Create a horizontal scrollbar with previe and place it underneath the date axis
+                            chart.scrollbarX = new am4charts.XYChartScrollbar();
+                            chart.scrollbarX.series.push(series);
+                            chart.scrollbarX.parent = chart.bottomAxesContainer;
+
+                            dateAxis.start = 0.79;
+                            dateAxis.keepSelection = true;
+
+                        }))
+            }
+        }
+        });
+</script>
+
+<!-- HTML -->
+</html>
+
+</div>
+
+
+</html>
+
+</html>
+
+</div>
+</body>
+</html>

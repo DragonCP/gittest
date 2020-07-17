@@ -1,0 +1,38 @@
+server:
+  port: 9090
+
+spring:
+  h2:
+    console:
+      enabled: true                       # use H2 web Console
+      path: /console                           # web path
+
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver   # H2 driver setting
+    url: jdbc:mysql://localhost:3306/mysql81?serverTimezone=UTC&characterEncoding=UTF-8
+    #org.h2.Driver
+    #jdbc:h2:mem:board;MODE=MySQL
+
+    username: big0550
+    password: 1234
+    datasource:
+        url: jdbc:mysql://localhost:3306/lookbook?serverTimezone=UTC&characterEncoding=UTF-8
+        username: big0550
+        password: 1234
+        driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true                  # Pretty Query
+  thymeleaf:
+    cache: false
+logging:
+  level:
+    root: WARN
+    me.ghsong.board: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: ERROR
+    org.hibernate.type: trace             # Query ? -> view
